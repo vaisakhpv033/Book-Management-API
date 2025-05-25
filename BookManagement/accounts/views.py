@@ -5,8 +5,8 @@ from .serializers import (
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
-from .serializers import UserSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .serializers import UserSerializer, UserProfileListSerializer
 
 # Create your views here.
 
@@ -80,3 +80,12 @@ class RegisterUserView(generics.CreateAPIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileListSerializer
+
+    def get_object(self):
+        return self.request.user

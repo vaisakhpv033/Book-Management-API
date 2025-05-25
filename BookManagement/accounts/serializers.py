@@ -193,3 +193,21 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
         return user
+    
+
+class UserProfileListSerializer(serializers.ModelSerializer):
+    # prevents users from changing email
+    email = serializers.EmailField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "profile_picture",
+            "is_blocked",
+        ]
