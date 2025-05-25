@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from .models import User
 from rest_framework_simplejwt.tokens import RefreshToken
+import re
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom JWT login serializer that prevents blocked users from getting tokens"""
@@ -49,3 +50,61 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
             raise serializers.ValidationError({"error": "User does not exist"})
 
         return super().validate(attrs)
+
+
+
+class UserSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "password",
+            "confirm_password",
+        ]
+        extra_kwargs = {
+            "password": {"write_only": True},
+            "phone_number": {"required": False},
+        }
+
+    def validate(self, data):
+        password = data.get("password")
+        confirm_password = data.get("confirm_password")
+
+        if password != confirm_password:
+            raise serializers.ValidationError({"password": "Passwords do not match"})
+
+        if len(password) < 8:
+            raise serializers.ValidationError({"password": "Password must be at least 8 characters long"})
+        
+        if not re.search(r"[A-Z]", password):
+            raise serializers.ValidationError({"password": "Password must contain at least one uppercase letter"})
+        
+        if not re.search(r"[a-z]", password):
+            raise serializers.ValidationError({"password": "Password must contain at least one lowercase letter"})
+        
+        if not re.search(r"\d", password):
+            raise serializers.ValidationError({"password": "Password must contain at least one number"})
+
+        if not re.search(r"[^\w\s]", password):
+            raise serializers.ValidationError({"password": "Password must contain at least one special character"})
+
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop("confirm_password")
+        user = User.objects.create_user(
+            email=validated_data["email"],
+            username=validated_data["username"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
+            phone_number=validated_data.get("phone_number", ""),
+            password=validated_data["password"],
+        )
+
+        return user
