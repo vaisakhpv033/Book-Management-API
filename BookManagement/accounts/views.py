@@ -12,38 +12,68 @@ from .serializers import UserSerializer
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
-    API View for user login.
+    API endpoint for user login.
 
+    This view allows users to obtain a pair of JWT tokens (access and refresh tokens)
+    by providing valid credentials (email and password).
+
+    Attributes:
+        serializer_class (CustomTokenObtainPairSerializer): The serializer used for token generation.
     """
-
     serializer_class = CustomTokenObtainPairSerializer
 
 
 class CustomTokenRefreshView(TokenRefreshView):
     """
-    API View for getting new access token.
+    API endpoint for refreshing access tokens.
 
+    This view allows users to obtain a new access token using a valid refresh token.
+    It ensures that blocked users cannot refresh their tokens.
+
+    Attributes:
+        serializer_class (CustomTokenRefreshSerializer): The serializer used for token refresh.
     """
-
     serializer_class = CustomTokenRefreshSerializer
 
 
 class RegisterUserView(generics.CreateAPIView):
     """
-    API View for user registration.
-    Users will be created in an inactive state until they verify their OTP.
+    API endpoint for user registration.
 
+    This view allows new users to register by providing their details. 
+
+    Attributes:
+        serializer_class (UserSerializer): The serializer used for user creation.
+        permission_classes (tuple): Permissions required to access this view. 
+                                    Default is `AllowAny`, meaning no authentication is required.
+
+    Methods:
+        create(request, *args, **kwargs): Handles the creation of a new user.
     """
-
     serializer_class = UserSerializer
     permission_classes = (AllowAny,)
 
     def create(self, request, *args, **kwargs):
+        """
+        Handle user registration.
+
+        This method validates the user data and creates a new user if the data is valid.
+        If the data is invalid, it returns an error response.
+
+        Args:
+            request (Request): The HTTP request object containing user data.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A success response with a status of 201 if the user is created successfully,
+                      or an error response with a status of 400 if the data is invalid.
+        """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(
-                {   
+                {
                     "status": "success",
                     "message": "User created successfully."
                 },

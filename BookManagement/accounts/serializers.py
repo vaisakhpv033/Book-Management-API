@@ -6,18 +6,45 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import re
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Custom JWT login serializer that prevents blocked users from getting tokens"""
+    """
+    Custom serializer for obtaining JWT tokens.
+
+    This serializer extends the default `TokenObtainPairSerializer` to add custom claims
+    to the token and prevent blocked users from obtaining tokens.
+
+    Methods:
+        get_token(cls, user): Adds custom claims to the token.
+        validate(attrs): Validates the user and checks if the account is blocked.
+    """
 
     @classmethod
     def get_token(cls, user):
-        token = super().get_token(user)
-        # Adding custom claims to the token
-        token["username"] = user.username
+        """
+        Add custom claims to the token.
 
+        Args:
+            user (User): The user instance for which the token is being generated.
+
+        Returns:
+            token (RefreshToken): The token with added custom claims.
+        """
+        token = super().get_token(user)
+        token["username"] = user.username
         return token
 
     def validate(self, attrs):
-        """Check if user is blocked before generating token"""
+        """
+        Validate the user and check if the account is blocked.
+
+        Args:
+            attrs (dict): The attributes passed for validation.
+
+        Raises:
+            PermissionDenied: If the user's account is blocked.
+
+        Returns:
+            dict: The validated data.
+        """
         data = super().validate(attrs)
         user = self.user
 
@@ -27,15 +54,33 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             )
 
         return data
-    
-    
+
+
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
-    """Custom JWT refresh serializer to prevent blocked users from refreshing tokens"""
+    """
+    Custom serializer for refreshing JWT tokens.
+
+    This serializer extends the default `TokenRefreshSerializer` to prevent blocked users
+    from refreshing their tokens.
+
+    Methods:
+        validate(attrs): Validates the refresh token and checks if the user is blocked.
+    """
 
     def validate(self, attrs):
-        """Override refresh logic to check if the user is blocked"""
+        """
+        Validate the refresh token and check if the user is blocked.
 
-        # get the refresh token from the request and decode it
+        Args:
+            attrs (dict): The attributes passed for validation.
+
+        Raises:
+            PermissionDenied: If the user's account is blocked.
+            serializers.ValidationError: If the user does not exist.
+
+        Returns:
+            dict: The validated data.
+        """
         refresh_token = attrs["refresh"]
         refresh = RefreshToken(refresh_token)
         user_id = refresh.payload.get("user_id")
@@ -52,8 +97,21 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         return super().validate(attrs)
 
 
-
 class UserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the User model.
+
+    This serializer handles user creation and validation, including password confirmation
+    and password strength checks.
+
+    Attributes:
+        confirm_password (CharField): A write-only field for confirming the password.
+
+    Methods:
+        validate(data): Validates the user data, including password confirmation and strength.
+        create(validated_data): Creates a new user instance.
+    """
+
     confirm_password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
@@ -73,6 +131,21 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
+        """
+        Validate the user data.
+
+        This method checks if the passwords match and ensures the password meets
+        strength requirements (length, uppercase, lowercase, number, special character).
+
+        Args:
+            data (dict): The data to validate.
+
+        Raises:
+            serializers.ValidationError: If the passwords do not match or fail strength checks.
+
+        Returns:
+            dict: The validated data.
+        """
         password = data.get("password")
         confirm_password = data.get("confirm_password")
 
@@ -97,6 +170,18 @@ class UserSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        """
+        Create a new user instance.
+
+        This method removes the `confirm_password` field from the validated data
+        and creates a new user using the `create_user` method.
+
+        Args:
+            validated_data (dict): The validated data for creating the user.
+
+        Returns:
+            User: The created user instance.
+        """
         validated_data.pop("confirm_password")
         user = User.objects.create_user(
             email=validated_data["email"],
