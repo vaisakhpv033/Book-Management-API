@@ -11,6 +11,7 @@ class Authors(models.Model):
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField(blank=True, null=True)
     date_of_death = models.DateField(blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.full_name}"
@@ -22,6 +23,12 @@ class Authors(models.Model):
     class Meta:
         ordering = ["first_name", "last_name"]
         verbose_name_plural = "Authors"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["first_name", "last_name"],
+                name="unique_author_full_name"
+            )
+        ]
 
 class Generes(models.Model):
     """
@@ -42,7 +49,7 @@ class Books(models.Model):
     Model representing a book in the library.
     """
 
-    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
+    created_by = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=200, blank=True, null=True)
     book_url = models.URLField(blank=True, null=True)
