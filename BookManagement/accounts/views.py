@@ -82,10 +82,31 @@ class RegisterUserView(generics.CreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-
 class UserProfileView(generics.RetrieveUpdateAPIView):
+    """
+    API endpoint for retrieving and updating the authenticated user's profile.
+
+    This view allows authenticated users to view and update their profile information.
+    Users can only access and modify their own profile.
+
+    Attributes:
+        permission_classes (list): Permissions required to access this view. 
+                                   Default is `IsAuthenticated`, meaning the user must be logged in.
+        serializer_class (UserProfileListSerializer): The serializer used for retrieving and updating user profiles.
+
+    Methods:
+        get_object(): Retrieves the currently authenticated user.
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileListSerializer
 
     def get_object(self):
+        """
+        Retrieve the authenticated user's profile.
+
+        This method returns the user instance associated with the current request.
+
+        Returns:
+            User: The authenticated user instance.
+        """
         return self.request.user

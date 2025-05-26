@@ -5,6 +5,7 @@ from .models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 import re
 
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     Custom serializer for obtaining JWT tokens.
@@ -196,7 +197,29 @@ class UserSerializer(serializers.ModelSerializer):
     
 
 class UserProfileListSerializer(serializers.ModelSerializer):
-    # prevents users from changing email
+    """
+    Serializer for the User model's profile.
+
+    This serializer is used for retrieving and updating the authenticated user's profile.
+    It ensures that certain fields, such as the email, are read-only and cannot be modified.
+
+    Attributes:
+        email (EmailField): A read-only field to prevent users from modifying their email.
+
+    Meta:
+        model (User): The User model associated with this serializer.
+        fields (list): The fields to include in the serialized output.
+
+    Fields:
+        id (int): The unique identifier of the user (read-only by default).
+        username (str): The username of the user.
+        email (str): The email address of the user (read-only).
+        first_name (str): The first name of the user.
+        last_name (str): The last name of the user.
+        phone_number (str): The phone number of the user.
+        profile_picture (str): The URL of the user's profile picture.
+        is_blocked (bool): Indicates whether the user is blocked.
+    """
     email = serializers.EmailField(read_only=True)
 
     class Meta:
